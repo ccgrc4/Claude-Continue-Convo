@@ -1,0 +1,371 @@
+/* Reset and Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    --primary-color: #6366f1;
+    --primary-hover: #4f46e5;
+    --success-color: #10b981;
+    --success-hover: #059669;
+    --secondary-color: #6b7280;
+    --secondary-hover: #4b5563;
+    --bg-color: #f9fafb;
+    --card-bg: #ffffff;
+    --text-color: #111827;
+    --text-muted: #6b7280;
+    --border-color: #e5e7eb;
+    --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: var(--text-color);
+    line-height: 1.6;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.container {
+    max-width: 900px;
+    margin: 0 auto;
+    background: var(--card-bg);
+    border-radius: 16px;
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+}
+
+/* Header */
+header {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    color: white;
+    padding: 40px 30px;
+    text-align: center;
+}
+
+header h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+
+.subtitle {
+    font-size: 1.1rem;
+    opacity: 0.95;
+}
+
+/* Main Content */
+main {
+    padding: 40px 30px;
+}
+
+/* Instructions */
+.instructions {
+    background: #eff6ff;
+    border-left: 4px solid var(--primary-color);
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 30px;
+}
+
+.instructions h2 {
+    color: var(--primary-color);
+    font-size: 1.3rem;
+    margin-bottom: 15px;
+}
+
+.instructions ol {
+    margin-left: 20px;
+    color: var(--text-color);
+}
+
+.instructions li {
+    margin-bottom: 8px;
+}
+
+.instructions a {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.instructions a:hover {
+    text-decoration: underline;
+}
+
+/* Input Section */
+.input-section {
+    margin-bottom: 30px;
+}
+
+label {
+    display: block;
+    margin-bottom: 10px;
+    color: var(--text-color);
+    font-size: 1rem;
+}
+
+textarea {
+    width: 100%;
+    padding: 15px;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 0.95rem;
+    resize: vertical;
+    transition: border-color 0.3s ease;
+    min-height: 200px;
+}
+
+textarea:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+/* Buttons */
+.button-group {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+    flex-wrap: wrap;
+}
+
+.btn {
+    padding: 12px 24px;
+    font-size: 1rem;
+    font-weight: 600;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: inherit;
+}
+
+.btn-primary {
+    background: var(--primary-color);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: var(--primary-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+}
+
+.btn-secondary {
+    background: var(--secondary-color);
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: var(--secondary-hover);
+}
+
+.btn-success {
+    background: var(--success-color);
+    color: white;
+}
+
+.btn-success:hover {
+    background: var(--success-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+}
+
+.btn:active {
+    transform: translateY(0);
+}
+
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Output Section */
+.output-section {
+    margin-top: 30px;
+    padding-top: 30px;
+    border-top: 2px solid var(--border-color);
+}
+
+.output-section.hidden {
+    display: none;
+}
+
+.output-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.formatted-output {
+    background: #f9fafb;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    padding: 20px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 0.95rem;
+    line-height: 1.8;
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+/* Copy Feedback */
+.copy-feedback {
+    margin-top: 10px;
+    padding: 10px;
+    background: #d1fae5;
+    color: #065f46;
+    border-radius: 6px;
+    text-align: center;
+    font-weight: 600;
+    animation: fadeIn 0.3s ease;
+}
+
+.copy-feedback.hidden {
+    display: none;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Footer */
+footer {
+    background: var(--bg-color);
+    padding: 30px;
+    text-align: center;
+    color: var(--text-muted);
+    border-top: 1px solid var(--border-color);
+}
+
+footer p {
+    margin-bottom: 8px;
+}
+
+.tip {
+    font-size: 0.9rem;
+    font-style: italic;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    body {
+        padding: 10px;
+    }
+
+    header h1 {
+        font-size: 1.8rem;
+    }
+
+    .subtitle {
+        font-size: 1rem;
+    }
+
+    header,
+    main,
+    footer {
+        padding: 20px;
+    }
+
+    .instructions {
+        padding: 15px;
+    }
+
+    .instructions h2 {
+        font-size: 1.1rem;
+    }
+
+    .instructions ol {
+        margin-left: 15px;
+        font-size: 0.9rem;
+    }
+
+    textarea {
+        min-height: 150px;
+        font-size: 16px; /* Prevents zoom on iOS */
+    }
+
+    .button-group {
+        flex-direction: column;
+    }
+
+    .btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .output-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .output-header .btn {
+        width: 100%;
+    }
+
+    .formatted-output {
+        font-size: 0.9rem;
+        padding: 15px;
+        max-height: 400px;
+    }
+}
+
+@media (max-width: 480px) {
+    header h1 {
+        font-size: 1.5rem;
+    }
+
+    .subtitle {
+        font-size: 0.9rem;
+    }
+
+    .container {
+        border-radius: 12px;
+    }
+}
+
+/* Dark mode support (optional, respects system preference) */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg-color: #1f2937;
+        --card-bg: #111827;
+        --text-color: #f9fafb;
+        --text-muted: #9ca3af;
+        --border-color: #374151;
+    }
+
+    .instructions {
+        background: #1e3a5f;
+    }
+
+    .formatted-output {
+        background: #1f2937;
+        color: #f9fafb;
+    }
+
+    footer {
+        background: #0f172a;
+    }
+}

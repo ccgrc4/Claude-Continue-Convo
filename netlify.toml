@@ -1,0 +1,21 @@
+# Netlify configuration file
+
+[build]
+  # No build command needed for static site
+  publish = "."
+
+[[headers]]
+  # Apply headers to all routes
+  for = "/*"
+  [headers.values]
+    # Security headers
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    X-XSS-Protection = "1; mode=block"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+# Redirect rules (optional)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
