@@ -3,6 +3,7 @@
 [build]
   # No build command needed for static site
   publish = "."
+  functions = "netlify/functions"
 
 [[headers]]
   # Apply headers to all routes

@@ -1,0 +1,15 @@
+{
+  "name": "claude-chat-formatter",
+  "version": "1.0.0",
+  "description": "Format Claude.ai conversations for easy sharing",
+  "main": "index.html",
+  "scripts": {
+    "dev": "netlify dev"
+  },
+  "keywords": ["claude", "chat", "formatter", "conversation"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "node-fetch": "^2.7.0"
+  }
+}

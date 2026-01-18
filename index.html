@@ -17,28 +17,48 @@
         <main>
             <div class="instructions">
                 <h2>How to use:</h2>
-                <ol>
-                    <li>Visit your <a href="https://claude.ai" target="_blank">Claude.ai share link</a></li>
-                    <li>Select all (Cmd+A or Ctrl+A) and copy the conversation</li>
-                    <li>Paste it in the box below</li>
-                    <li>Click "Format Conversation" to get speaker-labeled text</li>
-                    <li>Copy and paste into a new Claude chat!</li>
-                </ol>
+                <p><strong>Option 1:</strong> Paste the share URL directly (e.g., https://claude.ai/share/xxx)</p>
+                <p><strong>Option 2:</strong> Copy and paste the conversation text</p>
+                <p>Click "Format Conversation" and copy the result to paste into a new Claude chat!</p>
             </div>
 
             <div class="input-section">
-                <label for="conversation-input">
-                    <strong>Paste your conversation here:</strong>
-                </label>
-                <textarea
-                    id="conversation-input"
-                    placeholder="Paste the conversation from your Claude share link here..."
-                    rows="10"
-                ></textarea>
+                <div class="input-tabs">
+                    <button id="url-tab" class="tab-btn active">📎 Share URL</button>
+                    <button id="text-tab" class="tab-btn">📝 Text</button>
+                </div>
+
+                <div id="url-input-container" class="input-container">
+                    <label for="url-input">
+                        <strong>Paste Claude share URL:</strong>
+                    </label>
+                    <input
+                        type="text"
+                        id="url-input"
+                        placeholder="https://claude.ai/share/..."
+                        class="url-input"
+                    />
+                    <div id="loading-indicator" class="loading-indicator hidden">
+                        <span class="spinner"></span> Fetching conversation...
+                    </div>
+                </div>
+
+                <div id="text-input-container" class="input-container hidden">
+                    <label for="conversation-input">
+                        <strong>Paste conversation text:</strong>
+                    </label>
+                    <textarea
+                        id="conversation-input"
+                        placeholder="Paste the conversation from your Claude share link here..."
+                        rows="10"
+                    ></textarea>
+                </div>
+
                 <div class="button-group">
                     <button id="format-btn" class="btn btn-primary">Format Conversation</button>
                     <button id="clear-btn" class="btn btn-secondary">Clear</button>
                 </div>
+                <div id="error-message" class="error-message hidden"></div>
             </div>
 
             <div id="output-section" class="output-section hidden">
