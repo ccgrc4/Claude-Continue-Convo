@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Format Claude.ai conversations for easy sharing and copying">
+    <title>Claude Chat Formatter</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🤖 Claude Chat Formatter</h1>
+            <p class="subtitle">Format Claude conversations for easy sharing</p>
+        </header>
+
+        <main>
+            <div class="instructions">
+                <h2>How to use:</h2>
+                <ol>
+                    <li>Visit your <a href="https://claude.ai" target="_blank">Claude.ai share link</a></li>
+                    <li>Select all (Cmd+A or Ctrl+A) and copy the conversation</li>
+                    <li>Paste it in the box below</li>
+                    <li>Click "Format Conversation" to get speaker-labeled text</li>
+                    <li>Copy and paste into a new Claude chat!</li>
+                </ol>
+            </div>
+
+            <div class="input-section">
+                <label for="conversation-input">
+                    <strong>Paste your conversation here:</strong>
+                </label>
+                <textarea
+                    id="conversation-input"
+                    placeholder="Paste the conversation from your Claude share link here..."
+                    rows="10"
+                ></textarea>
+                <div class="button-group">
+                    <button id="format-btn" class="btn btn-primary">Format Conversation</button>
+                    <button id="clear-btn" class="btn btn-secondary">Clear</button>
+                </div>
+            </div>
+
+            <div id="output-section" class="output-section hidden">
+                <div class="output-header">
+                    <label><strong>Formatted Conversation:</strong></label>
+                    <button id="copy-btn" class="btn btn-success">
+                        <span id="copy-icon">📋</span> Copy to Clipboard
+                    </button>
+                </div>
+                <div id="formatted-output" class="formatted-output"></div>
+                <div id="copy-feedback" class="copy-feedback hidden">✓ Copied to clipboard!</div>
+            </div>
+        </main>
+
+        <footer>
+            <p>Made with ❤️ for easier Claude conversations</p>
+            <p class="tip">💡 Tip: Bookmark this page on all your devices for quick access!</p>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
