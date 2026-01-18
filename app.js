@@ -1,5 +1,6 @@
 // DOM Elements
 const conversationInput = document.getElementById('conversation-input');
+const urlInput = document.getElementById('url-input');
 const formatBtn = document.getElementById('format-btn');
 const clearBtn = document.getElementById('clear-btn');
 const copyBtn = document.getElementById('copy-btn');
@@ -7,11 +8,22 @@ const outputSection = document.getElementById('output-section');
 const formattedOutput = document.getElementById('formatted-output');
 const copyFeedback = document.getElementById('copy-feedback');
 const copyIcon = document.getElementById('copy-icon');
+const urlTab = document.getElementById('url-tab');
+const textTab = document.getElementById('text-tab');
+const urlInputContainer = document.getElementById('url-input-container');
+const textInputContainer = document.getElementById('text-input-container');
+const loadingIndicator = document.getElementById('loading-indicator');
+const errorMessage = document.getElementById('error-message');
+
+// Current active tab
+let activeTab = 'url';
 
 // Event Listeners
 formatBtn.addEventListener('click', formatConversation);
 clearBtn.addEventListener('click', clearAll);
 copyBtn.addEventListener('click', copyToClipboard);
+urlTab.addEventListener('click', () => switchTab('url'));
+textTab.addEventListener('click', () => switchTab('text'));
 
 // Handle Enter key in textarea (Ctrl/Cmd + Enter to format)
 conversationInput.addEventListener('keydown', (e) => {
@@ -20,14 +32,141 @@ conversationInput.addEventListener('keydown', (e) => {
     }
 });
 
+// Handle Enter key in URL input
+urlInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+        formatConversation();
+    }
+});
+
+/**
+ * Switch between URL and Text input tabs
+ */
+function switchTab(tab) {
+    activeTab = tab;
+
+    if (tab === 'url') {
+        urlTab.classList.add('active');
+        textTab.classList.remove('active');
+        urlInputContainer.classList.remove('hidden');
+        textInputContainer.classList.add('hidden');
+        urlInput.focus();
+    } else {
+        textTab.classList.add('active');
+        urlTab.classList.remove('active');
+        textInputContainer.classList.remove('hidden');
+        urlInputContainer.classList.add('hidden');
+        conversationInput.focus();
+    }
+
+    // Clear any errors
+    errorMessage.classList.add('hidden');
+}
+
 /**
  * Main function to format the conversation
  */
-function formatConversation() {
+async function formatConversation() {
+    // Clear previous errors
+    errorMessage.classList.add('hidden');
+    errorMessage.textContent = '';
+
+    if (activeTab === 'url') {
+        await formatFromURL();
+    } else {
+        formatFromText();
+    }
+}
+
+/**
+ * Fetch and format conversation from URL
+ */
+async function formatFromURL() {
+    const url = urlInput.value.trim();
+
+    if (!url) {
+        showError('Please paste a Claude share URL first!');
+        return;
+    }
+
+    // Validate URL format
+    if (!url.includes('claude.ai/share/')) {
+        showError('Please enter a valid Claude share URL (e.g., https://claude.ai/share/xxx)');
+        return;
+    }
+
+    // Show loading state
+    loadingIndicator.classList.remove('hidden');
+    formatBtn.disabled = true;
+    formatBtn.textContent = 'Fetching...';
+
+    try {
+        // Call our serverless function
+        const response = await fetch('/.netlify/functions/fetch-conversation', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ url })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || data.error) {
+            throw new Error(data.error || data.suggestion || 'Failed to fetch conversation');
+        }
+
+        if (!data.success || !data.conversation || data.conversation.length === 0) {
+            // If serverless function couldn't parse, show fallback message
+            showError(
+                'Could not automatically fetch the conversation. ' +
+                'Please switch to the "Text" tab and copy/paste the conversation manually.',
+                true
+            );
+            return;
+        }
+
+        // Format the conversation
+        let formatted = '';
+        data.conversation.forEach(msg => {
+            const speaker = msg.speaker === 'raw' ? 'User' : msg.speaker;
+            formatted += `${speaker}: ${msg.content}\n\n`;
+        });
+
+        // If we got a "raw" response, try to parse it further
+        if (data.conversation.length === 1 && data.conversation[0].speaker === 'raw') {
+            formatted = parseAndFormat(data.conversation[0].content);
+        }
+
+        formattedOutput.textContent = formatted.trim();
+        outputSection.classList.remove('hidden');
+
+        // Scroll to output
+        outputSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+    } catch (error) {
+        console.error('Error fetching conversation:', error);
+        showError(
+            `Failed to fetch: ${error.message}. ` +
+            'Try switching to the "Text" tab and copying the conversation manually.',
+            true
+        );
+    } finally {
+        // Hide loading state
+        loadingIndicator.classList.add('hidden');
+        formatBtn.disabled = false;
+        formatBtn.textContent = 'Format Conversation';
+    }
+}
+
+/**
+ * Format conversation from pasted text
+ */
+function formatFromText() {
     const rawText = conversationInput.value.trim();
 
     if (!rawText) {
-        alert('Please paste a conversation first!');
+        showError('Please paste a conversation first!');
         return;
     }
 
@@ -35,7 +174,7 @@ function formatConversation() {
         const formatted = parseAndFormat(rawText);
 
         if (!formatted) {
-            alert('Could not parse the conversation. Please make sure you copied the entire conversation.');
+            showError('Could not parse the conversation. Please make sure you copied the entire conversation.');
             return;
         }
 
@@ -46,7 +185,25 @@ function formatConversation() {
         outputSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     } catch (error) {
         console.error('Error formatting conversation:', error);
-        alert('An error occurred while formatting. Please try again.');
+        showError('An error occurred while formatting. Please try again.');
+    }
+}
+
+/**
+ * Show error message
+ */
+function showError(message, switchToTextTab = false) {
+    errorMessage.textContent = message;
+    errorMessage.classList.remove('hidden');
+
+    if (switchToTextTab) {
+        // Optionally suggest switching tabs
+        setTimeout(() => {
+            const shouldSwitch = confirm('Would you like to switch to manual text input mode?');
+            if (shouldSwitch) {
+                switchTab('text');
+            }
+        }, 500);
     }
 }
 
@@ -211,10 +368,19 @@ function alternatingSimpleSplit(text) {
  */
 function clearAll() {
     conversationInput.value = '';
+    urlInput.value = '';
     formattedOutput.textContent = '';
     outputSection.classList.add('hidden');
     copyFeedback.classList.add('hidden');
-    conversationInput.focus();
+    errorMessage.classList.add('hidden');
+    loadingIndicator.classList.add('hidden');
+
+    // Focus appropriate input based on active tab
+    if (activeTab === 'url') {
+        urlInput.focus();
+    } else {
+        conversationInput.focus();
+    }
 }
 
 /**
@@ -278,5 +444,6 @@ function fallbackCopy(text) {
 
 // Auto-focus on load
 window.addEventListener('load', () => {
-    conversationInput.focus();
+    // Focus URL input since it's the default tab
+    urlInput.focus();
 });
