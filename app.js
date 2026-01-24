@@ -101,23 +101,10 @@ async function formatFromURL() {
     formatBtn.textContent = 'Fetching...';
 
     try {
-        // Call our serverless function
-        const response = await fetch('/.netlify/functions/fetch-conversation', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ url })
-        });
+        const html = await fetchShareHtml(url);
+        const messages = extractMessagesFromHtml(html);
 
-        const data = await response.json();
-
-        if (!response.ok || data.error) {
-            throw new Error(data.error || data.suggestion || 'Failed to fetch conversation');
-        }
-
-        if (!data.success || !data.conversation || data.conversation.length === 0) {
-            // If serverless function couldn't parse, show fallback message
+        if (!messages.length) {
             showError(
                 'Could not automatically fetch the conversation. ' +
                 'Please switch to the "Text" tab and copy/paste the conversation manually.',
@@ -126,17 +113,7 @@ async function formatFromURL() {
             return;
         }
 
-        // Format the conversation
-        let formatted = '';
-        data.conversation.forEach(msg => {
-            const speaker = msg.speaker === 'raw' ? 'User' : msg.speaker;
-            formatted += `${speaker}: ${msg.content}\n\n`;
-        });
-
-        // If we got a "raw" response, try to parse it further
-        if (data.conversation.length === 1 && data.conversation[0].speaker === 'raw') {
-            formatted = parseAndFormat(data.conversation[0].content);
-        }
+        const formatted = formatMessages(messages);
 
         formattedOutput.textContent = formatted.trim();
         outputSection.classList.remove('hidden');
@@ -157,6 +134,243 @@ async function formatFromURL() {
         formatBtn.disabled = false;
         formatBtn.textContent = 'Format Conversation';
     }
+}
+
+/**
+ * Fetch Claude share page HTML via a CORS-friendly proxy
+ * @param {string} url - Claude share URL
+ * @returns {Promise<string>} - HTML content
+ */
+async function fetchShareHtml(url) {
+    const normalizedUrl = url.replace(/^https?:\/\//, '');
+    const proxyUrl = `https://r.jina.ai/http://${normalizedUrl}`;
+    const response = await fetch(proxyUrl);
+
+    if (!response.ok) {
+        throw new Error(`Proxy fetch failed (${response.status})`);
+    }
+
+    return response.text();
+}
+
+/**
+ * Extract messages from Claude share HTML
+ * @param {string} html - Share page HTML
+ * @returns {Array} - Array of { speaker, content }
+ */
+function extractMessagesFromHtml(html) {
+    const nextData = extractNextData(html);
+    if (!nextData) {
+        return [];
+    }
+
+    const messageArray = extractMessagesFromNextData(nextData);
+    if (!messageArray || messageArray.length === 0) {
+        return [];
+    }
+
+    return normalizeMessages(messageArray);
+}
+
+/**
+ * Extract __NEXT_DATA__ JSON from HTML
+ * @param {string} html - HTML string
+ * @returns {object|null}
+ */
+function extractNextData(html) {
+    const scriptMatch = html.match(/<script id="__NEXT_DATA__" type="application\/json">([\s\S]*?)<\/script>/i);
+    if (scriptMatch) {
+        try {
+            return JSON.parse(scriptMatch[1]);
+        } catch (error) {
+            console.warn('Failed to parse __NEXT_DATA__ JSON', error);
+        }
+    }
+
+    const inlineMatch = html.match(/__NEXT_DATA__\s*=\s*({[\s\S]*?})\s*<\/script>/i);
+    if (inlineMatch) {
+        try {
+            return JSON.parse(inlineMatch[1]);
+        } catch (error) {
+            console.warn('Failed to parse inline __NEXT_DATA__ JSON', error);
+        }
+    }
+
+    return null;
+}
+
+/**
+ * Extract messages array from Next.js data structure
+ * @param {object} data - Parsed __NEXT_DATA__ JSON
+ * @returns {Array}
+ */
+function extractMessagesFromNextData(data) {
+    const candidatePaths = [
+        ['props', 'pageProps', 'conversation', 'messages'],
+        ['props', 'pageProps', 'conversation', 'chat_messages'],
+        ['props', 'pageProps', 'messages'],
+        ['props', 'pageProps', 'data', 'messages']
+    ];
+
+    for (const path of candidatePaths) {
+        const result = getValueAtPath(data, path);
+        if (Array.isArray(result) && result.length > 0) {
+            return result;
+        }
+    }
+
+    return findMessageArray(data);
+}
+
+/**
+ * Get value at a nested path in an object
+ * @param {object} obj - Object to query
+ * @param {string[]} path - Path array
+ * @returns {*}
+ */
+function getValueAtPath(obj, path) {
+    return path.reduce((acc, key) => (acc && acc[key] !== undefined ? acc[key] : undefined), obj);
+}
+
+/**
+ * Find a likely message array by walking the object
+ * @param {object} node - JSON node
+ * @returns {Array|null}
+ */
+function findMessageArray(node) {
+    if (!node) {
+        return null;
+    }
+
+    if (Array.isArray(node)) {
+        if (node.length && node.every(item => typeof item === 'object' && item)) {
+            const sample = node[0];
+            const hasSpeaker = 'role' in sample || 'sender' in sample || 'speaker' in sample || 'author' in sample;
+            const hasContent = 'content' in sample || 'text' in sample || 'completion' in sample || 'message' in sample;
+            if (hasSpeaker && hasContent) {
+                return node;
+            }
+        }
+
+        for (const item of node) {
+            const found = findMessageArray(item);
+            if (found) {
+                return found;
+            }
+        }
+    } else if (typeof node === 'object') {
+        for (const value of Object.values(node)) {
+            const found = findMessageArray(value);
+            if (found) {
+                return found;
+            }
+        }
+    }
+
+    return null;
+}
+
+/**
+ * Normalize message objects into { speaker, content }
+ * @param {Array} messages - Raw message objects
+ * @returns {Array}
+ */
+function normalizeMessages(messages) {
+    return messages
+        .map((message, index) => {
+            const content = extractMessageContent(message);
+            const speaker = extractMessageSpeaker(message, index);
+            return content ? { speaker, content } : null;
+        })
+        .filter(Boolean);
+}
+
+/**
+ * Extract message content from a raw message object
+ * @param {*} message - Raw message
+ * @returns {string|null}
+ */
+function extractMessageContent(message) {
+    if (!message) {
+        return null;
+    }
+
+    if (typeof message === 'string') {
+        return message.trim();
+    }
+
+    const directText = message.text || message.completion;
+    if (typeof directText === 'string') {
+        return directText.trim();
+    }
+
+    if (typeof message.content === 'string') {
+        return message.content.trim();
+    }
+
+    if (Array.isArray(message.content)) {
+        const parts = message.content
+            .map(part => {
+                if (typeof part === 'string') {
+                    return part;
+                }
+                if (part && typeof part === 'object') {
+                    return part.text || part.content || part.value || '';
+                }
+                return '';
+            })
+            .filter(Boolean);
+        if (parts.length) {
+            return parts.join('\n').trim();
+        }
+    }
+
+    if (message.message) {
+        return extractMessageContent(message.message);
+    }
+
+    return null;
+}
+
+/**
+ * Extract speaker from a raw message object
+ * @param {*} message - Raw message
+ * @param {number} index - Message index fallback
+ * @returns {string}
+ */
+function extractMessageSpeaker(message, index) {
+    const rawSpeaker =
+        message?.role ||
+        message?.speaker ||
+        message?.sender ||
+        message?.author?.role ||
+        message?.author ||
+        message?.message?.role;
+
+    const normalized = typeof rawSpeaker === 'string' ? rawSpeaker.toLowerCase() : '';
+
+    if (normalized.includes('assistant') || normalized.includes('claude')) {
+        return 'Claude';
+    }
+    if (normalized.includes('user') || normalized.includes('human')) {
+        return 'Darko';
+    }
+
+    return index % 2 === 0 ? 'Darko' : 'Claude';
+}
+
+/**
+ * Format messages into a labeled conversation
+ * @param {Array} messages - Array of { speaker, content }
+ * @returns {string}
+ */
+function formatMessages(messages) {
+    return messages
+        .map((msg, index) => {
+            const speaker = msg.speaker || (index % 2 === 0 ? 'Darko' : 'Claude');
+            return `${speaker}: ${msg.content.trim()}`;
+        })
+        .join('\n\n');
 }
 
 /**
